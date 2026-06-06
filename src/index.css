@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+@import "tailwindcss";
+
+/* @plugin "tailwindcss-animate"; */
+/* @custom-variant dark (&:is(.dark *)); */
+/* @import "tw-animate-css"; */
+
+/* @custom-variant dark (&:is(.dark *)); */
+
+:root {
+  /* Typography */
+  --font-family: roboto, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --line-height: 1.5;
+  --font-weight-base: 400;
+
+  /* Colors - Updated with new palette */
+  --bg-color: linear-gradient(135deg, #0a0a14 0%, #1a0f2e 50%, #0d1f2d 100%);
+  --text-color: rgba(255, 255, 255, 0.87);
+  --muted-color: rgba(255, 255, 255, 0.65);
+  --accent: oklch(0.97 0 0);
+  --accent-hover: #124F88;
+
+  /* New Color Palette */
+  --primary-purple: #331574;
+  --primary-blue: #124F88;
+  --primary-light-blue: #4A9DE3;
+
+  /* Gradient combinations */
+  --gradient-primary: linear-gradient(135deg, #331574 0%, #124F88 50%, #4A9DE3 100%);
+  --gradient-reverse: linear-gradient(135deg, #4A9DE3 0%, #124F88 50%, #331574 100%);
+  --gradient-horizontal: linear-gradient(90deg, #331574, #124F88, #4A9DE3);
+
+  /* Background variations */
+  --bg-dark: #0f0a1e;
+  --bg-darker: #0a0614;
+  --bg-purple-dark: rgba(51, 21, 116, 0.2);
+  --bg-blue-dark: rgba(18, 79, 136, 0.2);
+
+  /* Text colors */
+  --text-light: #f5f5f5;
+  --text-muted: #a0a0a0;
+  --text-gradient: linear-gradient(90deg, #4A9DE3, #331574);
+
+  /* Accent colors for UI elements */
+  --accent-purple: #331574;
+  --accent-blue: #124F88;
+  --accent-cyan: #4A9DE3;
+
+  /* Button variables */
+  --btn-padding-y: 0.6rem;
+  --btn-padding-x: 1.5rem;
+  --btn-radius: 30px;
+  --btn-font-size: 1rem;
+  --btn-font-weight: 500;
+  --btn-bg: linear-gradient(135deg, #331574, #124F88);
+  --btn-bg-hover: linear-gradient(135deg, #124F88, #4A9DE3);
+  --btn-border-color: transparent;
+
+  /* Accessibility / rendering */
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--text-color);
+  font-family: var(--font-family);
+  line-height: var(--line-height);  
+  font-weight: var(--font-weight-base);
+  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+  color: var(--text-light);
+  overflow-x: hidden;
+}
+
+/* Navbar */
+nav {
+    position: fixed;
+    top: 15px;
+    background: rgba(17, 17, 31, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+}
+
+nav ul {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
