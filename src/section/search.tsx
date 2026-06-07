@@ -84,7 +84,7 @@ const Searching: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchMethod, setSearchMethod] = useState<'tfidf' | 'jaccard' | 'hybrid'>('hybrid');
+  const [searchMethod, setSearchMethod] = useState<'tfidf' | 'jaccard' | 'hybrid' | 'semantic'>('hybrid');
   const [hasSearched, setHasSearched] = useState(false);
   const [correctionMessage, setCorrectionMessage] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<any>(null);
@@ -126,41 +126,39 @@ const Searching: React.FC = () => {
     };
   }, []);
 
-  const handleSearch = async () => {
+  const handleSearch = async (overrideMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic') => {
     if (!searchQuery.trim()) return;
-    
+
+    const activeMethod = overrideMethod ?? searchMethod;
+
     setIsLoading(true);
     setHasSearched(true);
     setCorrectionMessage(null);
+    setEvaluation(null);
+
     try {
-      // Development: proxy to localhost:5000
-      // Production: use environment variable for backend URL
       const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
-      const API_URL = import.meta.env.PROD 
-        ? `${backendUrl.replace(/\/$/, '')}/api/search`
-        : '/api/search';
-      
+      const isSemantic = activeMethod === 'semantic';
+      const endpoint = isSemantic ? '/api/semantic-search' : '/api/search';
+      const API_URL = import.meta.env.PROD
+        ? `${backendUrl.replace(/\/$/, '')}${endpoint}`
+        : endpoint;
+
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: searchQuery,
-          method: searchMethod,
-          top_k: 10
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          isSemantic
+            ? { query: searchQuery, top_k: 10 }
+            : { query: searchQuery, method: activeMethod, top_k: 10 }
+        ),
       });
-      
+
       const data = await response.json();
       setSearchResults(data.results || []);
-      
-      // Store evaluation data if available
-      if (data.evaluation) {
-        setEvaluation(data.evaluation);
-      }
-      
-      // Show correction message if query was auto-corrected
+
+      if (data.evaluation) setEvaluation(data.evaluation);
+
       if (data.corrected_query && data.corrected_query !== data.query) {
         setCorrectionMessage(`Mencari: "${data.corrected_query}" (dari "${data.query}")`);
       }
@@ -248,7 +246,7 @@ const Searching: React.FC = () => {
               <Search className="h-6 w-6 text-slate-400" />
             </div>
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={isLoading}
               className="absolute inset-y-2 right-0 mr-2 px-5 lg:px-6 bg-gradient-to-r from-[#124F88] to-[#4A9DE3]
                               text-white rounded-full font-small lg:font-medium
@@ -264,7 +262,7 @@ const Searching: React.FC = () => {
           {/* Search Method Selector */}
           <div className="flex gap-2 bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20">
             <button
-              onClick={() => setSearchMethod('hybrid')}
+              onClick={() => { setSearchMethod('hybrid'); if (hasSearched && searchQuery.trim()) handleSearch('hybrid'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'hybrid'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -274,7 +272,7 @@ const Searching: React.FC = () => {
               Hybrid
             </button>
             <button
-              onClick={() => setSearchMethod('tfidf')}
+              onClick={() => { setSearchMethod('tfidf'); if (hasSearched && searchQuery.trim()) handleSearch('tfidf'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'tfidf'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -284,7 +282,7 @@ const Searching: React.FC = () => {
               TF-IDF
             </button>
             <button
-              onClick={() => setSearchMethod('jaccard')}
+              onClick={() => { setSearchMethod('jaccard'); if (hasSearched && searchQuery.trim()) handleSearch('jaccard'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'jaccard'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -292,6 +290,16 @@ const Searching: React.FC = () => {
               }`}
             >
               Jaccard
+            </button>
+            <button
+              onClick={() => { setSearchMethod('semantic'); if (hasSearched && searchQuery.trim()) handleSearch('semantic'); }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                searchMethod === 'semantic'
+                  ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Semantic
             </button>
           </div>
 

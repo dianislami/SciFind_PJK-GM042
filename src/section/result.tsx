@@ -5,7 +5,7 @@ import Modal from '@/components/ui/modal';
 interface ResultSectionProps {
   results?: any[];
   isLoading?: boolean;
-  searchMethod?: 'tfidf' | 'jaccard' | 'hybrid';
+  searchMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic';
   hasSearched?: boolean;
   evaluation?: any;
 }
@@ -45,16 +45,38 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
-    const [evalMethod, setEvalMethod] = useState<'tfidf' | 'jaccard'>('tfidf');
+    const [evalMethod, setEvalMethod] = useState<'tfidf' | 'jaccard' | 'semantic'>('tfidf');
+    const [recommendations, setRecommendations] = useState<any[]>([]);
+    const [isLoadingRecs, setIsLoadingRecs] = useState(false);
 
-    const openModal = (movie: any) => {
+    const openModal = async (movie: any) => {
         setSelectedMovie(movie);
         setIsModalOpen(true);
+        setRecommendations([]);
+        setIsLoadingRecs(true);
+        try {
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+            const API_URL = import.meta.env.PROD
+                ? `${backendUrl.replace(/\/$/, '')}/api/recommend`
+                : '/api/recommend';
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: movie.title || movie.judul, top_n: 6 }),
+            });
+            const data = await res.json();
+            setRecommendations(data.recommendations || []);
+        } catch {
+            setRecommendations([]);
+        } finally {
+            setIsLoadingRecs(false);
+        }
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedMovie(null);
+        setRecommendations([]);
     };
 
     const openEvalModal = () => {
@@ -105,11 +127,14 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
             } else if (searchMethod === 'jaccard') {
                 scoreA = a.jaccard_score || 0;
                 scoreB = b.jaccard_score || 0;
+            } else if (searchMethod === 'semantic') {
+                scoreA = a.semantic_score || 0;
+                scoreB = b.semantic_score || 0;
             } else {
-                // hybrid - use combined score
+            // hybrid
                 scoreA = a.score || 0;
                 scoreB = b.score || 0;
-            }
+            } 
             
             return scoreB - scoreA;
         });
@@ -174,7 +199,7 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                     <div key={index} className={`flex justify-center ${index % 2 === 0 ? 'lg:justify-end' : 'lg:justify-start'}`} style={{ position: 'relative' }}>
                         <div className="relative">
                             {/* Score Badge - Top Right */}
-                            {(item.tfidf_score !== undefined || item.jaccard_score !== undefined || item.score !== undefined) && (
+                            {(item.tfidf_score !== undefined || item.jaccard_score !== undefined || item.score !== undefined || item.semantic_score !== undefined) && (
                                 <div className="absolute top-2 right-2 lg:top-6 lg:right-6 z-[110] flex gap-2">
                                     {/* Show scores based on selected method */}
                                     {searchMethod === 'hybrid' && (
@@ -211,6 +236,13 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                                         <div className="bg-black/50 backdrop-blur-md px-3 py-1 lg:px-5 lg:py-2 rounded-lg border border-[#8f5bff]/50">
                                             <span className="text-[#8f5bff] text-xs lg:text-base font-semibold">Jaccard: </span>
                                             <span className="text-white text-xs lg:text-base font-bold">{item.jaccard_score.toFixed(4)}</span>
+                                        </div>
+                                    )}
+
+                                    {searchMethod === 'semantic' && item.semantic_score !== undefined && (
+                                        <div className="bg-black/50 backdrop-blur-md px-3 py-1 lg:px-5 lg:py-2 rounded-lg border border-emerald-400/50">
+                                            <span className="text-emerald-400 text-xs lg:text-base font-semibold">Semantic: </span>
+                                            <span className="text-white text-xs lg:text-base font-bold">{(item.semantic_score * 100).toFixed(1)}%</span>
                                         </div>
                                     )}
                                 </div>
@@ -341,6 +373,12 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                                             <span className="text-white text-xs lg:text-base font-bold">{selectedMovie.jaccard_score.toFixed(4)}</span>
                                         </div>
                                     )}
+                                    {selectedMovie.semantic_score !== undefined && (
+                                        <div className="bg-black/50 backdrop-blur-md px-3 py-1 lg:px-5 lg:py-3 rounded-lg border border-emerald-400/50">
+                                            <span className="text-emerald-400 text-xs lg:text-base font-semibold">Semantic: </span>
+                                            <span className="text-white text-xs lg:text-base font-bold">{(selectedMovie.semantic_score * 100).toFixed(1)}%</span>
+                                        </div>
+                                    )}
                                     {selectedMovie.score !== undefined && (
                                         <div className="bg-gradient-to-r from-[#8f5bff]/40 to-[#4A9DE3]/40 backdrop-blur-md px-3 py-1 lg:px-5 lg:py-3 rounded-lg border border-white/50">
                                             <span className="text-white text-xs lg:text-base font-semibold">Hybrid: </span>
@@ -376,6 +414,48 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                                 })()}
                             </div>
                         </div>
+
+                        {/* Film Serupa */}
+                        <div className="border-t border-[#4A9DE3]/50 pt-6 mt-6">
+                            <h3
+                                className="text-xl lg:text-2xl font-bold text-white mb-4"
+                                style={{ fontFamily: "'Michroma', monospace" }}
+                            >
+                                Film Serupa
+                            </h3>
+                            {isLoadingRecs ? (
+                                <p className="text-white/50 italic text-sm">Memuat rekomendasi...</p>
+                            ) : recommendations.length === 0 ? (
+                                <p className="text-white/50 italic text-sm">Tidak ada rekomendasi tersedia.</p>
+                            ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {recommendations.map((rec, i) => (
+                                        <div
+                                            key={i}
+                                            className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 overflow-hidden cursor-pointer hover:border-[#4A9DE3]/60 transition-all duration-300 hover:scale-[1.02]"
+                                            onClick={() => openModal(rec)}
+                                        >
+                                            {rec.poster ? (
+                                                <img
+                                                    src={rec.poster}
+                                                    alt={rec.title}
+                                                    className="w-full object-cover"
+                                                    style={{ height: '140px' }}
+                                                />
+                                            ) : (
+                                                <div className="w-full flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a14]" style={{ height: '140px' }}>
+                                                    <span className="text-4xl">🎬</span>
+                                                </div>
+                                            )}
+                                            <div className="p-3">
+                                                <p className="text-white text-xs font-semibold line-clamp-2 mb-1" style={{ fontFamily: "'Michroma', monospace" }}>{rec.title}</p>
+                                                <p className="text-emerald-400 text-xs">{(rec.similarity_score * 100).toFixed(1)}% mirip</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </Modal>
@@ -391,7 +471,7 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                             Hasil Evaluasi
                         </h2>
 
-                        {/* Toggle between TF-IDF and Jaccard */}
+                        {/* Toggle between TF-IDF, Jaccard, Semantic */}
                         <div className="flex gap-3 mb-6">
                             <button
                                 onClick={() => setEvalMethod('tfidf')}
@@ -405,11 +485,23 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                             >
                                 Jaccard
                             </button>
+                            <button
+                                onClick={() => setEvalMethod('semantic')}
+                                className={`${evalMethod === 'semantic' ? 'bg-gradient-to-r from-[#8f5bff]/40 to-[#4A9DE3]/40 text-white' : 'bg-black/40 text-white/80'} text-sm lg:text-base px-3 py-1 lg:px-4 lg:py-2 rounded-md lg:rounded-lg border border-white/40 transition hover:cursor-pointer`}
+                            >
+                                Semantic
+                            </button>
                         </div>
 
                         {/* Pick the evaluation object for the selected method */}
-                        {/** Support two shapes: new { tfidf, jaccard } or legacy single evaluation object */}
                         {(() => {
+                            if (evalMethod === 'semantic') {
+                                return (
+                                    <p className="text-white/70 italic text-sm bg-black/30 p-4 rounded-lg border border-white/20">
+                                        Metode Semantic Search tidak menghasilkan metrik evaluasi Precision/Recall/F1 karena pencarian berbasis kemiripan vektor embedding, bukan relevance judgment berbasis kata kunci.
+                                    </p>
+                                );
+                            }
                             const currentEval = (evaluation && (evaluation as any)[evalMethod]) ? (evaluation as any)[evalMethod] : evaluation;
                             if (!currentEval) return <p className="text-white/80">Tidak ada data evaluasi untuk metode ini.</p>;
 
