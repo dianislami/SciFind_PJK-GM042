@@ -31,9 +31,9 @@ const Team: React.FC = () => {
       bio: 'Bertanggung jawab dalam implementasi model sentence embedding, membangun sistem Content-Based Filtering, melakukan training dan evaluasi model AI, serta menyusun laporan evaluasi komparatif untuk mengukur performa sistem rekomendasi dan semantic search.',
       image: '/images/tinsari.png',
       social: {
-        github: 'https://github.com/tinsari',
-        linkedin: 'https://linkedin.com/in/tinsari',
-        email: 'tinsari@scifind.com',
+        github: 'https://github.com/tinsarirauhana',
+        linkedin: ' https://www.linkedin.com/in/tinsari-rauhana/',
+        email: 'tinsarirauhanaa@gmail.com',
       },
       skills: [
         'Machine Learning',
@@ -50,9 +50,9 @@ const Team: React.FC = () => {
       bio: 'Bertanggung jawab dalam pengembangan dan peningkatan antarmuka pengguna SciFind, termasuk fitur rekomendasi dan semantic search, integrasi frontend dengan backend, deployment aplikasi menggunakan Vercel, serta pembuatan video presentasi proyek.',
       image: '/images/dian.png',
       social: {
-        github: 'https://github.com/dian',
-        linkedin: 'https://linkedin.com/in/dian',
-        email: 'dian@scifind.com',
+        github: 'https://github.com/dianislami',
+        linkedin: 'https://www.linkedin.com/in/dian-islami-257a263b2/',
+        email: 'dianislami553@gmail.com',
       },
       skills: [
         'React',
@@ -70,9 +70,9 @@ const Team: React.FC = () => {
       bio: 'Bertanggung jawab dalam pembaruan dan ekspansi korpus data melalui proses crawling, preprocessing data untuk pipeline embedding, pengelolaan dataset dan vector store, serta pengembangan REST API untuk semantic search dan sistem rekomendasi.',
       image: '/images/firah.png',
       social: {
-        github: 'https://github.com/firah',
-        linkedin: 'https://linkedin.com/in/firah',
-        email: 'firah@scifind.com',
+        github: 'https://github.com/firahmaulida',
+        linkedin: 'https://www.linkedin.com/in/firah-maulida-29257b377/',
+        email: 'firahmaulida.05@gmail.com',
       },
       skills: [
         'Data Engineering',
@@ -90,9 +90,9 @@ const Team: React.FC = () => {
       bio: 'Bertanggung jawab dalam pengujian dan validasi sistem secara end-to-end, penyusunan Project Brief, pembuatan slide presentasi dan panduan penggunaan produk, serta koordinasi pelaksanaan checkpoint tim selama pengembangan proyek.',
       image: '/images/renatha.png',
       social: {
-        github: 'https://github.com/renatha',
-        linkedin: 'https://linkedin.com/in/renatha',
-        email: 'renatha@scifind.com',
+        github: 'https://github.com/Cutrenatha',
+        linkedin: 'https://www.linkedin.com/in/cut-renatha-fadhilah-655033258/',
+        email: 'cutrenathaf@gmail.com',
       },
       skills: [
         'Quality Assurance',
@@ -295,12 +295,13 @@ const Team: React.FC = () => {
                     </a>
                   )}
                   {currentMember.social.email && (
-                    <a
-                      href={`mailto:${currentMember.social.email}`}
-                      className="p-3 rounded-full bg-[#4A9DE3]/20 text-[#4A9DE3] border border-[#4A9DE3]/30 hover:text-white hover:bg-[#4A9DE3]/30 hover:scale-110 transition-all duration-300"
-                    >
-                      <Mail className="w-3 h-3 lg:w-5 lg:h-5" />
-                    </a>
+                  <a
+                    href={`mailto:${currentMember.social.email}`}
+                    aria-label={`Send email to ${currentMember.name}`}
+                    className="p-3 rounded-full bg-[#4A9DE3]/20 text-[#4A9DE3] border border-[#4A9DE3]/30 hover:text-white hover:bg-[#4A9DE3]/30 hover:scale-110 transition-all duration-300"
+                  >
+                    <Mail className="w-3 h-3 lg:w-5 lg:h-5" />
+                  </a>
                   )}
                 </div>
               </div>
