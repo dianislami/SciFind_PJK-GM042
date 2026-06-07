@@ -8,8 +8,8 @@ const HeroSection: React.FC = () => {
   const [showCursor2, setShowCursor2] = useState<boolean>(false);
   const [showCursor3, setShowCursor3] = useState<boolean>(false);
   
-  const text1: string = 'Temukan Review Film ';
-  const text2: string = 'Sci-Fi';
+  const text1: string = 'Temukan Rekomendasi ';
+  const text2: string = 'Film Sci-Fi';
   const text3: string = ' Favoritmu Di Sini';
   
   useEffect(() => {
@@ -137,17 +137,17 @@ const HeroSection: React.FC = () => {
               className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl mb-6 leading-tight"
               style={{ fontFamily: "'Michroma', monospace" }}
             >
-              <span className="text-white">
+              <span className="block text-white">
                 {typedText1}
                 {showCursor1 && <span className="animate-pulse">|</span>}
               </span>
-              <span className="bg-gradient-to-r from-[#4A9DE3] to-[#331574] bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-[#4A9DE3] to-[#331574] bg-clip-text text-transparent">
                 {typedText2}
                 {showCursor2 && <span className="animate-pulse text-[#4A9DE3]">|</span>}
-              </span>
-              <span className="block text-white">
-                {typedText3}
-                {showCursor3 && <span className="animate-pulse">|</span>}
+                <span className="text-white">
+                  {typedText3}
+                  {showCursor3 && <span className="animate-pulse text-white">|</span>}
+                </span>
               </span>
             </h1>
           </div>

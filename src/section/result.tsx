@@ -8,6 +8,8 @@ interface ResultSectionProps {
   searchMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic';
   hasSearched?: boolean;
   evaluation?: any;
+  geminiAnswer?: string | null;
+  isGeminiLoading?: boolean;
 }
 
 // Function to parse markdown-like text and convert to JSX
@@ -39,7 +41,7 @@ const parseMarkdownText = (text: string) => {
   });
 };
 
-const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading = false, searchMethod = 'hybrid', hasSearched = false, evaluation = null }) => {
+const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading = false, searchMethod = 'hybrid', hasSearched = false, evaluation = null, geminiAnswer = null, isGeminiLoading = false }) => {
     const defaultMessageRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
@@ -179,14 +181,35 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
     // Show no results message if search returned empty
     if (displayData.length === 0) {
         return (
-            <div className="flex justify-center items-center my-20">
-                <div 
-                    className="text-white/50 text-xl font-michroma"
-                    style={{
-                        animation: 'fadeInUp 0.8s ease-out',
-                    }}
-                >
-                    Tidak ada hasil ditemukan
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                {/* Tetap tampilkan Gemini answer meski hasil kosong */}
+                {(isGeminiLoading || geminiAnswer) && (
+                    <div className="mb-10 bg-white/5 backdrop-blur-md border border-[#4A9DE3]/30 rounded-2xl p-6 lg:p-8">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8f5bff] to-[#4A9DE3] flex items-center justify-center text-white text-sm font-bold">AI</div>
+                            <h2 className="text-white font-semibold text-base lg:text-lg" style={{ fontFamily: "'Michroma', monospace" }}>
+                                SciFind AI
+                            </h2>
+                        </div>
+                        {isGeminiLoading ? (
+                            <div className="flex items-center gap-2 text-white/50 text-sm">
+                                <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                        ) : (
+                            <div className="text-white/90 text-sm lg:text-base leading-relaxed space-y-3">
+                                {geminiAnswer!.split(/\n\n+/).filter(p => p.trim()).map((para, i) => (
+                                    <p key={i}>{parseMarkdownText(para.trim())}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+                <div className="flex justify-center items-center my-20">
+                    <div className="text-white/50 text-xl font-michroma">
+                        Tidak ada hasil ditemukan
+                    </div>
                 </div>
             </div>
         );
@@ -194,6 +217,54 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
 
     return (
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
+
+            {/* Gemini AI Answer */}
+            {(isGeminiLoading || geminiAnswer) && (
+                <div className="mb-10 bg-white/5 backdrop-blur-md border border-[#4A9DE3]/30 rounded-2xl p-6 lg:p-8">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8f5bff] to-[#4A9DE3] flex items-center justify-center text-white text-sm font-bold">AI</div>
+                        <h2 className="text-white font-semibold text-base lg:text-lg" style={{ fontFamily: "'Michroma', monospace" }}>
+                            SciFind AI
+                        </h2>
+                    </div>
+                    {isGeminiLoading ? (
+                        <div className="flex items-center gap-2 text-white/50 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <div className="w-2 h-2 rounded-full bg-[#4A9DE3] animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    ) : (
+                        <div className="text-white/90 text-sm lg:text-base leading-relaxed space-y-2">
+                            {geminiAnswer!.split('\n').filter(line => line.trim()).map((line, i) => {
+                                const trimmed = line.trim();
+                                // Deteksi baris numbered list: "1.", "2.", dst
+                                const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
+                                if (numberedMatch) {
+                                    return (
+                                        <div key={i} className="flex gap-3">
+                                            <span className="text-[#4A9DE3] font-bold min-w-[1.5rem]">{numberedMatch[1]}.</span>
+                                            <span>{parseMarkdownText(numberedMatch[2])}</span>
+                                        </div>
+                                    );
+                                }
+                                // Deteksi bullet: "- " atau "* "
+                                const bulletMatch = trimmed.match(/^[-*]\s+(.+)/);
+                                if (bulletMatch) {
+                                    return (
+                                        <div key={i} className="flex gap-3">
+                                            <span className="text-[#4A9DE3] font-bold min-w-[1rem]">•</span>
+                                            <span>{parseMarkdownText(bulletMatch[1])}</span>
+                                        </div>
+                                    );
+                                }
+                                // Paragraph biasa
+                                return <p key={i}>{parseMarkdownText(trimmed)}</p>;
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-15 lg:mb-25 z-30">
                 {displayData.map((item, index) => (
                     <div key={index} className={`flex justify-center ${index % 2 === 0 ? 'lg:justify-end' : 'lg:justify-start'}`} style={{ position: 'relative' }}>

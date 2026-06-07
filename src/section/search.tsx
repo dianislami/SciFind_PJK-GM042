@@ -88,6 +88,8 @@ const Searching: React.FC = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [correctionMessage, setCorrectionMessage] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<any>(null);
+  const [geminiAnswer, setGeminiAnswer] = useState<string | null>(null);
+  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
 
   useEffect(() => {
     const observerOptions = {
@@ -126,13 +128,10 @@ const Searching: React.FC = () => {
     };
   }, []);
 
-  const handleSearch = async (overrideMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic') => {
+  const fetchSearchOnly = async (activeMethod: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic') => {
     if (!searchQuery.trim()) return;
 
-    const activeMethod = overrideMethod ?? searchMethod;
-
     setIsLoading(true);
-    setHasSearched(true);
     setCorrectionMessage(null);
     setEvaluation(null);
 
@@ -144,7 +143,7 @@ const Searching: React.FC = () => {
         ? `${backendUrl.replace(/\/$/, '')}${endpoint}`
         : endpoint;
 
-      const response = await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
@@ -154,11 +153,9 @@ const Searching: React.FC = () => {
         ),
       });
 
-      const data = await response.json();
+      const data = await res.json();
       setSearchResults(data.results || []);
-
       if (data.evaluation) setEvaluation(data.evaluation);
-
       if (data.corrected_query && data.corrected_query !== data.query) {
         setCorrectionMessage(`Mencari: "${data.corrected_query}" (dari "${data.query}")`);
       }
@@ -167,6 +164,71 @@ const Searching: React.FC = () => {
       alert('Error connecting to search server. Please make sure the backend is running.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSearch = async (overrideMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic') => {
+    if (!searchQuery.trim()) return;
+
+    const activeMethod = overrideMethod ?? searchMethod;
+
+    setIsLoading(true);
+    setHasSearched(true);
+    setCorrectionMessage(null);
+    setEvaluation(null);
+    setGeminiAnswer(null);
+    setIsGeminiLoading(true);
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const isSemantic = activeMethod === 'semantic';
+      const endpoint = isSemantic ? '/api/semantic-search' : '/api/search';
+      const API_URL = import.meta.env.PROD
+        ? `${backendUrl.replace(/\/$/, '')}${endpoint}`
+        : endpoint;
+      const GEMINI_URL = import.meta.env.PROD
+        ? `${backendUrl.replace(/\/$/, '')}/api/gemini`
+        : '/api/gemini';
+
+      const [searchRes, geminiRes] = await Promise.allSettled([
+        fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            isSemantic
+              ? { query: searchQuery, top_k: 10 }
+              : { query: searchQuery, method: activeMethod, top_k: 10 }
+          ),
+        }),
+        fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: searchQuery }),
+        }),
+      ]);
+
+      if (searchRes.status === 'fulfilled') {
+        const data = await searchRes.value.json();
+        setSearchResults(data.results || []);
+        if (data.evaluation) setEvaluation(data.evaluation);
+        if (data.corrected_query && data.corrected_query !== data.query) {
+          setCorrectionMessage(`Mencari: "${data.corrected_query}" (dari "${data.query}")`);
+        }
+      }
+
+      if (geminiRes.status === 'fulfilled') {
+        const gData = await geminiRes.value.json();
+        if (geminiRes.value.ok) {
+          setGeminiAnswer(gData.answer || null);
+        }
+      }
+
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Error connecting to search server. Please make sure the backend is running.');
+    } finally {
+      setIsLoading(false);
+      setIsGeminiLoading(false);
     }
   };
 
@@ -183,7 +245,7 @@ const Searching: React.FC = () => {
 
       <div className="w-screen overflow-hidden" style={{ fontFamily: "'Michroma', monospace" }}>
         <ScrollVelocity
-          texts={['Explore Sci-Fi Discover Reviews Find Articles Dive into Sci-Fi']}
+          texts={['Explore Sci-Fi Discover Recommendations Find Reviewa Dive into Sci-Fi']}
           velocity={50}
           className="h-12"
           damping={50}
@@ -224,7 +286,7 @@ const Searching: React.FC = () => {
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: "'Michroma', monospace" }}>
-            Cari Artikel & Review <br />Film Sci-Fi Disini
+            Cari Rekomendasi & Review <br />Film Sci-Fi Disini
           </h1>
         </div>
 
@@ -262,7 +324,7 @@ const Searching: React.FC = () => {
           {/* Search Method Selector */}
           <div className="flex gap-2 bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20">
             <button
-              onClick={() => { setSearchMethod('hybrid'); if (hasSearched && searchQuery.trim()) handleSearch('hybrid'); }}
+              onClick={() => { setSearchMethod('hybrid'); if (hasSearched && searchQuery.trim()) fetchSearchOnly('hybrid'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'hybrid'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -272,7 +334,7 @@ const Searching: React.FC = () => {
               Hybrid
             </button>
             <button
-              onClick={() => { setSearchMethod('tfidf'); if (hasSearched && searchQuery.trim()) handleSearch('tfidf'); }}
+              onClick={() => { setSearchMethod('tfidf'); if (hasSearched && searchQuery.trim()) fetchSearchOnly('tfidf'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'tfidf'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -282,7 +344,7 @@ const Searching: React.FC = () => {
               TF-IDF
             </button>
             <button
-              onClick={() => { setSearchMethod('jaccard'); if (hasSearched && searchQuery.trim()) handleSearch('jaccard'); }}
+              onClick={() => { setSearchMethod('jaccard'); if (hasSearched && searchQuery.trim()) fetchSearchOnly('jaccard'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'jaccard'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -292,7 +354,7 @@ const Searching: React.FC = () => {
               Jaccard
             </button>
             <button
-              onClick={() => { setSearchMethod('semantic'); if (hasSearched && searchQuery.trim()) handleSearch('semantic'); }}
+              onClick={() => { setSearchMethod('semantic'); if (hasSearched && searchQuery.trim()) fetchSearchOnly('semantic'); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 searchMethod === 'semantic'
                   ? 'bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] text-white'
@@ -312,7 +374,7 @@ const Searching: React.FC = () => {
         </div>
       </div>
 
-      <ResultSection results={searchResults} isLoading={isLoading} searchMethod={searchMethod} hasSearched={hasSearched} evaluation={evaluation} />
+      <ResultSection results={searchResults} isLoading={isLoading} searchMethod={searchMethod} hasSearched={hasSearched} evaluation={evaluation} geminiAnswer={geminiAnswer} isGeminiLoading={isGeminiLoading} />
     </div>  
   );
 };
