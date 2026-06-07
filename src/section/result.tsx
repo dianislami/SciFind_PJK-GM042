@@ -7,7 +7,6 @@ interface ResultSectionProps {
   isLoading?: boolean;
   searchMethod?: 'tfidf' | 'jaccard' | 'hybrid' | 'semantic';
   hasSearched?: boolean;
-  evaluation?: any;
   geminiAnswer?: string | null;
   isGeminiLoading?: boolean;
 }
@@ -41,13 +40,11 @@ const parseMarkdownText = (text: string) => {
   });
 };
 
-const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading = false, searchMethod = 'hybrid', hasSearched = false, evaluation = null, geminiAnswer = null, isGeminiLoading = false }) => {
+const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading = false, searchMethod = 'hybrid', hasSearched = false, geminiAnswer = null, isGeminiLoading = false }) => {
     const defaultMessageRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
-    const [evalMethod, setEvalMethod] = useState<'tfidf' | 'jaccard' | 'semantic'>('tfidf');
     const [recommendations, setRecommendations] = useState<any[]>([]);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
 
@@ -79,14 +76,6 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
         setIsModalOpen(false);
         setSelectedMovie(null);
         setRecommendations([]);
-    };
-
-    const openEvalModal = () => {
-        setIsEvalModalOpen(true);
-    };
-
-    const closeEvalModal = () => {
-        setIsEvalModalOpen(false);
     };
 
     useEffect(() => {
@@ -531,116 +520,6 @@ const ResultSection: React.FC<ResultSectionProps> = ({ results = [], isLoading =
                 )}
             </Modal>
 
-            {/* Evaluation Modal */}
-            <Modal isOpen={isEvalModalOpen} onClose={closeEvalModal}>
-                {evaluation && (
-                    <div className="p-6 lg:p-12">
-                        <h2 
-                            className="text-3xl lg:text-5xl font-bold text-white mb-4"
-                            style={{ fontFamily: "'Michroma', monospace" }}
-                        >
-                            Hasil Evaluasi
-                        </h2>
-
-                        {/* Toggle between TF-IDF, Jaccard, Semantic */}
-                        <div className="flex gap-3 mb-6">
-                            <button
-                                onClick={() => setEvalMethod('tfidf')}
-                                className={`${evalMethod === 'tfidf' ? 'bg-gradient-to-r from-[#8f5bff]/40 to-[#4A9DE3]/40 text-white' : 'bg-black/40 text-white/80'} text-sm lg:text-base px-3 py-1 lg:px-4 lg:py-2 rounded-md lg:rounded-lg border border-white/40 transition hover:cursor-pointer`}
-                            >
-                                TF-IDF
-                            </button>
-                            <button
-                                onClick={() => setEvalMethod('jaccard')}
-                                className={`${evalMethod === 'jaccard' ? 'bg-gradient-to-r from-[#8f5bff]/40 to-[#4A9DE3]/40 text-white' : 'bg-black/40 text-white/80'} text-sm lg:text-base px-3 py-1 lg:px-4 lg:py-2 rounded-md lg:rounded-lg border border-white/40 transition hover:cursor-pointer`}
-                            >
-                                Jaccard
-                            </button>
-                            <button
-                                onClick={() => setEvalMethod('semantic')}
-                                className={`${evalMethod === 'semantic' ? 'bg-gradient-to-r from-[#8f5bff]/40 to-[#4A9DE3]/40 text-white' : 'bg-black/40 text-white/80'} text-sm lg:text-base px-3 py-1 lg:px-4 lg:py-2 rounded-md lg:rounded-lg border border-white/40 transition hover:cursor-pointer`}
-                            >
-                                Semantic
-                            </button>
-                        </div>
-
-                        {/* Pick the evaluation object for the selected method */}
-                        {(() => {
-                            if (evalMethod === 'semantic') {
-                                return (
-                                    <p className="text-white/70 italic text-sm bg-black/30 p-4 rounded-lg border border-white/20">
-                                        Metode Semantic Search tidak menghasilkan metrik evaluasi Precision/Recall/F1 karena pencarian berbasis kemiripan vektor embedding, bukan relevance judgment berbasis kata kunci.
-                                    </p>
-                                );
-                            }
-                            const currentEval = (evaluation && (evaluation as any)[evalMethod]) ? (evaluation as any)[evalMethod] : evaluation;
-                            if (!currentEval) return <p className="text-white/80">Tidak ada data evaluasi untuk metode ini.</p>;
-
-                            return (
-                                <>
-                                    <div className="grid grid-cols-2 gap-6 mb-8">
-                                        {/* Precision */}
-                                        {currentEval.precision !== undefined && (
-                                            <div className="bg-black/50 backdrop-blur-md p-3 lg:p-6 rounded-lg border border-[#4A9DE3]/50">
-                                                <h3 className="text-[#4A9DE3] text-sm lg:text-lg font-semibold lg:mb-2">Precision</h3>
-                                                <p className="text-white text-lg lg:text-3xl font-bold">{currentEval.precision}</p>
-                                            </div>
-                                        )}
-
-                                        {/* Recall */}
-                                        {currentEval.recall !== undefined && (
-                                            <div className="bg-black/50 backdrop-blur-md p-3 lg:p-6 rounded-lg border border-[#8f5bff]/50">
-                                                <h3 className="text-[#8f5bff] text-sm lg:text-lg font-semibold lg:mb-2">Recall</h3>
-                                                <p className="text-white text-lg lg:text-3xl font-bold">{currentEval.recall}</p>
-                                            </div>
-                                        )}
-
-                                        {/* F1 Score */}
-                                        {currentEval.f1_score !== undefined && (
-                                            <div className="bg-black/50 backdrop-blur-md p-3 lg:p-6 rounded-lg border border-[#4A9DE3]/50">
-                                                <h3 className="text-[#4A9DE3] text-sm lg:text-lg font-semibold lg:mb-2">F1 Score</h3>
-                                                <p className="text-white text-lg lg:text-3xl font-bold">{currentEval.f1_score}</p>
-                                            </div>
-                                        )}
-
-                                        {/* Runtime */}
-                                        {currentEval.accuracy !== undefined && (
-                                            <div className="bg-black/50 backdrop-blur-md p-3 lg:p-6 rounded-lg border border-[#8f5bff]/50">
-                                                <h3 className="text-[#8f5bff] text-sm lg:text-lg font-semibold lg:mb-2">Runtime</h3>
-                                                <p className="text-white text-lg lg:text-3xl font-bold">{currentEval.accuracy} ms</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Query Info */}
-                                    {currentEval.query && (
-                                        <div className="border-t border-[#4A9DE3]/50 pt-6">
-                                            <h3 className="text-xl lg:text-2xl font-bold text-white mb-4" style={{ fontFamily: "'Michroma', monospace" }}>
-                                                Query
-                                            </h3>
-                                            <p className="text-white/80 text-base lg:text-lg bg-black/30 p-4 rounded-lg border border-white/40">
-                                                {currentEval.query}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                </>
-                            );
-                        })()}
-                    </div>
-                )}
-            </Modal>
-
-            {/* Sticky Evaluation Button */}
-            {hasSearched && evaluation && (
-                <button
-                    onClick={openEvalModal}
-                    className="fixed bottom-8 right-8 z-[150] px-4 py-1 lg:px-6 lg:py-3 bg-gradient-to-r from-[#8f5bff] to-[#4A9DE3] border border-white/50 text-white rounded-full text-sm lg:text-lg font-medium hover:cursor-pointer hover:brightness-105 hover:saturate-125 hover:scale-110 transition-all duration-300 shadow-lg"
-                    title="Lihat Hasil Evaluasi"
-                >
-                    Evaluasi
-                </button>
-            )}
         </div>
     );
 };

@@ -87,7 +87,7 @@ const Searching: React.FC = () => {
   const [searchMethod, setSearchMethod] = useState<'tfidf' | 'jaccard' | 'hybrid' | 'semantic'>('hybrid');
   const [hasSearched, setHasSearched] = useState(false);
   const [correctionMessage, setCorrectionMessage] = useState<string | null>(null);
-  const [evaluation, setEvaluation] = useState<any>(null);
+
   const [geminiAnswer, setGeminiAnswer] = useState<string | null>(null);
   const [isGeminiLoading, setIsGeminiLoading] = useState(false);
 
@@ -133,7 +133,6 @@ const Searching: React.FC = () => {
 
     setIsLoading(true);
     setCorrectionMessage(null);
-    setEvaluation(null);
 
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
@@ -155,7 +154,6 @@ const Searching: React.FC = () => {
 
       const data = await res.json();
       setSearchResults(data.results || []);
-      if (data.evaluation) setEvaluation(data.evaluation);
       if (data.corrected_query && data.corrected_query !== data.query) {
         setCorrectionMessage(`Mencari: "${data.corrected_query}" (dari "${data.query}")`);
       }
@@ -175,7 +173,6 @@ const Searching: React.FC = () => {
     setIsLoading(true);
     setHasSearched(true);
     setCorrectionMessage(null);
-    setEvaluation(null);
     setGeminiAnswer(null);
     setIsGeminiLoading(true);
 
@@ -210,7 +207,6 @@ const Searching: React.FC = () => {
       if (searchRes.status === 'fulfilled') {
         const data = await searchRes.value.json();
         setSearchResults(data.results || []);
-        if (data.evaluation) setEvaluation(data.evaluation);
         if (data.corrected_query && data.corrected_query !== data.query) {
           setCorrectionMessage(`Mencari: "${data.corrected_query}" (dari "${data.query}")`);
         }
@@ -245,7 +241,7 @@ const Searching: React.FC = () => {
 
       <div className="w-screen overflow-hidden" style={{ fontFamily: "'Michroma', monospace" }}>
         <ScrollVelocity
-          texts={['Explore Sci-Fi Discover Recommendations Find Reviewa Dive into Sci-Fi']}
+          texts={['Explore Sci-Fi Discover Recommendations Find Reviews Dive into Sci-Fi']}
           velocity={50}
           className="h-12"
           damping={50}
@@ -374,7 +370,7 @@ const Searching: React.FC = () => {
         </div>
       </div>
 
-      <ResultSection results={searchResults} isLoading={isLoading} searchMethod={searchMethod} hasSearched={hasSearched} evaluation={evaluation} geminiAnswer={geminiAnswer} isGeminiLoading={isGeminiLoading} />
+      <ResultSection results={searchResults} isLoading={isLoading} searchMethod={searchMethod} hasSearched={hasSearched} geminiAnswer={geminiAnswer} isGeminiLoading={isGeminiLoading} />
     </div>  
   );
 };
